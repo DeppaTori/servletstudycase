@@ -14,6 +14,8 @@ import javax.servlet.http.HttpSession;
 import com.mitrais.rms.dao.UserDao;
 import com.mitrais.rms.dao.impl.UserDaoImpl;
 import com.mitrais.rms.model.User;
+import com.mitrais.rms.service.UserService;
+import com.mitrais.rms.service.impl.UserServiceImpl;
 import com.mitrais.rms.tools.UserValidator;
 import com.mitrais.rms.tools.ValidatorResult;
 
@@ -25,30 +27,33 @@ public class UserServlet extends AbstractController
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException
     {
     	
-    	HttpSession session = req.getSession();
-    	User userSession = (User) session.getAttribute("userSession");
-    	if(userSession==null) {
-    		redirectToLoginPage(req,resp);return;
-    	}
-    	
+    
         String path = getTemplatePath(req.getServletPath()+req.getPathInfo());
+        
+        UserService userService = UserServiceImpl.getInstance();
    
       
         if ("/list".equalsIgnoreCase(req.getPathInfo())){
+        	HttpSession session = req.getSession();
+        	
+        	
             UserDao userDao = UserDaoImpl.getInstance();
             List<User> users = userDao.findAll();
             req.setAttribute("users", users);
+            req.setAttribute("active_user", session.getAttribute("userSession"));
+            String warningMessage = (String)session.getAttribute("warningmessage");
+            if(warningMessage != null) {
+            	req.setAttribute("warningmessage", warningMessage);
+            	session.removeAttribute("warningmessage");
+            }
         }
         
         if ("/form".equalsIgnoreCase(req.getPathInfo())){
         	
         	Integer id = Integer.parseInt(req.getParameter("id")==null?"0":req.getParameter("id"));
-        	User oldUser = new User(0L,"","");
+        	User oldUser = new User();
         	Optional<User> user = Optional.of(oldUser);
-        	
-        	
-    
-        		
+
             	if(id>0) {
             		 UserDao userDao = UserDaoImpl.getInstance();
                      user = userDao.find(id.longValue());
@@ -63,13 +68,17 @@ public class UserServlet extends AbstractController
         
         if ("/delete".equalsIgnoreCase(req.getPathInfo())){
         	
-        	Integer id = Integer.parseInt(req.getParameter("id")==null?"0":req.getParameter("id"));
+        	userService.delete(req.getParameter("id"));
         	
-        	if(id>0) {
-       		 	UserDao userDao = UserDaoImpl.getInstance();
-       		 	boolean delete = userDao.delete(new User(id.longValue(),"",""));
-       		 	redirectToUserList(req, resp);return;
+        	if(!userService.queryResult()) {
+        		HttpSession session = req.getSession();
+        		session.setAttribute("warningmessage", userService.getWarningMessage());
         	}
+        	redirectToUserList(req, resp);return;
+        	
+        	
+        	
+        	
         }
         
 
@@ -92,57 +101,30 @@ public class UserServlet extends AbstractController
         	String username = req.getParameter("username");
         	String password = req.getParameter("userpass");	
         	String id = req.getParameter("id");	
-        	User newUser = new User(Long.parseLong(id),username,password);
         	
-        	String warningMessage = "";
-        	boolean validInput = false;
+        	UserService userService = UserServiceImpl.getInstance();
+        	userService.saveUpdate(id, username, password);
         	
-        	UserDao userDao = UserDaoImpl.getInstance();
-        	
-        	UserValidator userValidator = new UserValidator();
-        	ValidatorResult validatorResult = UserValidator.validateEditedRecord(newUser, userDao);
-        	
-        	
-        	// store user information
-        	if(validatorResult.result) {
-        		 
-        		 boolean queryResult = false;
-        		 
-        		 if(newUser.getId()>0) {
-        			 queryResult = userDao.update(newUser);
-
-        		 }else {
-        			 queryResult  = userDao.save(newUser);
-
-        		 }
-        		 
-        		 if(queryResult) {
-        			 redirectToUserList(req, resp);return;
-        		 }else {
-        			 warningMessage = "Something problem when processing your request.";
-        		 }
-        		 
-        	}else {
-        		warningMessage = validatorResult.message;
+        	if(userService.queryResult()) {
+        		redirectToUserList(req, resp);return;
         	}
         	
-            req.setAttribute("warningmessage",warningMessage);
-            req.setAttribute("user", newUser);
+        	 req.setAttribute("warningmessage",userService.getWarningMessage());
+             req.setAttribute("user", userService.getUser());
+             
         }
         
       
-        	 RequestDispatcher requestDispatcher = req.getRequestDispatcher(path);
-             requestDispatcher.forward(req, resp);
+        RequestDispatcher requestDispatcher = req.getRequestDispatcher(path);
+        requestDispatcher.forward(req, resp);
         
        
     }
     
     
-    public static void redirectToUserList(HttpServletRequest req,HttpServletResponse resp) throws IOException {
+    private void redirectToUserList(HttpServletRequest req,HttpServletResponse resp) throws IOException {
 		resp.sendRedirect(req.getContextPath() + "/users/list");
 	}
     
-    public static void redirectToLoginPage(HttpServletRequest req,HttpServletResponse resp) throws IOException {
-		resp.sendRedirect(req.getContextPath() + "/login");
-	}
+
 }

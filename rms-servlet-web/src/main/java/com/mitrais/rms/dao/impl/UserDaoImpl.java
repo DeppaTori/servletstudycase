@@ -103,12 +103,12 @@ public class UserDaoImpl implements UserDao
     }
 
     @Override
-    public boolean delete(User user)
+    public boolean delete(Long id)
     {
         try (Connection connection = DataSourceFactory.getConnection())
         {
             PreparedStatement stmt = connection.prepareStatement("DELETE FROM user WHERE id=?");
-            stmt.setLong(1, user.getId());
+            stmt.setLong(1,id);
             int i = stmt.executeUpdate();
             if(i == 1) {
                 return true;
@@ -152,4 +152,10 @@ public class UserDaoImpl implements UserDao
     {
         return SingletonHelper.INSTANCE;
     }
+
+	@Override
+	public boolean delete(User o) {
+		// TODO Auto-generated method stub
+		return false;
+	}
 }

@@ -6,6 +6,8 @@ import org.junit.Test;
 
 import com.mitrais.rms.dao.impl.UserDaoImpl;
 import com.mitrais.rms.model.User;
+import com.mitrais.rms.service.UserService;
+import com.mitrais.rms.service.impl.UserServiceImpl;
 import com.mitrais.rms.tools.UserValidator;
 import com.mitrais.rms.tools.ValidatorResult;
 
@@ -19,13 +21,18 @@ public class TestJunit {
 	
 	@Test
 	public void testValidate() {
-		UserValidator userValidator = new UserValidator();
-		User user = new User(0L,"Alan","123");
-		ValidatorResult resultExpected = new ValidatorResult();
-		resultExpected.message = "Username already taken";
-		resultExpected.result = false;
-		ValidatorResult result = UserValidator.validateEditedRecord(user,  UserDaoImpl.getInstance());
-		assertEquals(resultExpected.message,result.message);
+//		UserValidator userValidator = new UserValidator();
+//		User user = new User(0L,"Alan","123");
+//		ValidatorResult resultExpected = new ValidatorResult();
+//		resultExpected.message = "Username already taken";
+//		resultExpected.result = false;
+//		ValidatorResult result = UserValidator.validateEditedRecord(user,  UserDaoImpl.getInstance());
+//		assertEquals(resultExpected.message,result.message);
+		
+		UserService userService = UserServiceImpl.getInstance();
+    	userService.saveUpdate("0","Jo","12345");
+    	String resultExpected = "Username minimum 3 characters";
+    	assertEquals(resultExpected,userService.getWarningMessage());
 		
 	}
 }

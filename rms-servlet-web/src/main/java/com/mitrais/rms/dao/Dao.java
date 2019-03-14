@@ -42,4 +42,7 @@ public interface Dao<T, ID>
      * @return true if operaion success
      */
     boolean delete(T o);
+
+	boolean delete(Long id);
+    
 }

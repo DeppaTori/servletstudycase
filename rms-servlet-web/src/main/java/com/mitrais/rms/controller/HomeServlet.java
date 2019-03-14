@@ -25,11 +25,6 @@ public class HomeServlet extends AbstractController
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException
     {
     	
-    	HttpSession session = req.getSession();
-    	User userSession = (User) session.getAttribute("userSession");
-    	if(userSession==null) {
-    		resp.sendRedirect(req.getContextPath() + "/login");return;
-    	}
     	
         String path = getTemplatePath(req.getServletPath()+"/home/index");
       

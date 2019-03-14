@@ -13,6 +13,8 @@ import javax.servlet.http.HttpSession;
 import com.mitrais.rms.dao.UserDao;
 import com.mitrais.rms.dao.impl.UserDaoImpl;
 import com.mitrais.rms.model.User;
+import com.mitrais.rms.service.LoginService;
+import com.mitrais.rms.service.impl.LoginServiceImpl;
 import com.mitrais.rms.tools.UserValidator;
 import com.mitrais.rms.tools.ValidatorResult;
 
@@ -31,24 +33,16 @@ public class LoginServlet extends AbstractController
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException
     {
-       // super.doPost(req, resp);
-    	String username = req.getParameter("username");
-    	String password = req.getParameter("userpass");
-    	UserDao userDao = UserDaoImpl.getInstance();
-    	Optional<User> findUser=  userDao.findByUserName(username);
+
+    	LoginService loginService = LoginServiceImpl.getInstance();
+    	loginService.run(req.getParameter("username"), req.getParameter("userpass"), req);
     	
-    	UserValidator userValidator = new UserValidator();
-    	ValidatorResult validatorResult = userValidator.validate(findUser,password);
-    	
-    	if(validatorResult.result) {
-    		HttpSession session = req.getSession();
-    		session.setAttribute("userSession", findUser.get());
+    	if(loginService.getResult().result) {
     		resp.sendRedirect(req.getContextPath() + "/");
     		return;
-        	
     	}
     	
-    	req.setAttribute("message",validatorResult.message);
+    	req.setAttribute("message",loginService.getResult().message);
     	
     	String path = getTemplatePath(req.getServletPath());
         RequestDispatcher requestDispatcher = req.getRequestDispatcher(path);
